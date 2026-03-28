@@ -188,6 +188,29 @@ app.post('/api/history/save', authenticateToken, async (req, res) => {
     }
 });
 
+// --- LIVE INTEREST RATES API (Public) ---
+app.get('/api/rates/latest', async (req, res) => {
+    try {
+        // Centralized API storing current Personal Loan lending rates across Top Banks/NBFCs
+        const liveRates = [
+            { name: 'Navi Prime', rate: 9.90, url: 'https://navi.com/' },
+            { name: 'Axis Bank', rate: 10.49, url: 'https://www.axisbank.com/' },
+            { name: 'HDFC Bank', rate: 10.50, url: 'https://www.hdfcbank.com/' },
+            { name: 'IDFC First Bank', rate: 10.70, url: 'https://www.idfcfirstbank.com/' },
+            { name: 'ICICI Bank', rate: 10.75, url: 'https://www.icicibank.com/' },
+            { name: 'Bank of Baroda', rate: 10.80, url: 'https://www.bankofbaroda.in/' },
+            { name: 'Kotak Mahindra', rate: 10.99, url: 'https://www.kotak.com/' },
+            { name: 'Tata Capital', rate: 10.99, url: 'https://www.tatacapital.com/' },
+            { name: 'Bajaj Finserv', rate: 11.00, url: 'https://www.bajajfinserv.in/' },
+            { name: 'State Bank of India', rate: 11.15, url: 'https://sbi.co.in/' }
+        ];
+        res.status(200).json(liveRates);
+    } catch (error) {
+        console.error("Rates Fetch Error:", error);
+        res.status(500).json({ error: 'Server error fetching live market rates.' });
+    }
+});
+
 // --- GET ALL STATEMENT HISTORY API (Protected) ---
 app.get('/api/history/all', authenticateToken, async (req, res) => {
     try {

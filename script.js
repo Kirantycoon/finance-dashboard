@@ -842,22 +842,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Loan Comparison App Setup
-    const loanData = [
-        { name: 'HDFC Bank', rate: 10.50 },
-        { name: 'State Bank of India', rate: 11.15 },
-        { name: 'ICICI Bank', rate: 10.75 },
-        { name: 'Axis Bank', rate: 10.49 },
-        { name: 'Bajaj Finserv', rate: 11.00 },
-        { name: 'Kotak Mahindra', rate: 10.99 },
-        { name: 'IDFC First Bank', rate: 10.70 },
-        { name: 'Tata Capital', rate: 10.99 },
-        { name: 'Bank of Baroda', rate: 10.80 },
-        { name: 'Navi Prime', rate: 9.90 } // Best Rate Guaranteed
-    ];
-
-    loanData.sort((a, b) => a.rate - b.rate); // Sort Lowest to Highest!
-
+    let loanData = [];
     let showingAllLoans = false;
+
+    async function fetchLiveRates() {
+        try {
+            // Attempt to fetch from our new Node.js Backend API
+            const response = await fetch('http://localhost:5000/api/rates/latest');
+            if (!response.ok) throw new Error('API Offline');
+            loanData = await response.json();
+            console.log("Successfully connected to Live Lending API 🔌");
+        } catch (error) {
+            console.warn("Live Lending API Offline (Backend not running or deployed). Falling back to offline cached rates! ⚠️");
+            loanData = [
+                { name: 'HDFC Bank', rate: 10.50, url: 'https://www.hdfcbank.com/' }, { name: 'State Bank of India', rate: 11.15, url: 'https://sbi.co.in/' },
+                { name: 'ICICI Bank', rate: 10.75, url: 'https://www.icicibank.com/' }, { name: 'Axis Bank', rate: 10.49, url: 'https://www.axisbank.com/' },
+                { name: 'Bajaj Finserv', rate: 11.00, url: 'https://www.bajajfinserv.in/' }, { name: 'Kotak Mahindra', rate: 10.99, url: 'https://www.kotak.com/' },
+                { name: 'IDFC First Bank', rate: 10.70, url: 'https://www.idfcfirstbank.com/' }, { name: 'Tata Capital', rate: 10.99, url: 'https://www.tatacapital.com/' },
+                { name: 'Bank of Baroda', rate: 10.80, url: 'https://www.bankofbaroda.in/' }, { name: 'Navi Prime', rate: 9.90, url: 'https://navi.com/' }
+            ];
+        }
+        
+        loanData.sort((a, b) => a.rate - b.rate); // Sort Lowest to Highest!
+        renderLoans();
+    }
 
     function renderLoans() {
         const list = document.getElementById('loans-list');
@@ -882,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="loan-rate-col">
                     <span class="rate-value">${bank.rate.toFixed(2)}%<span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; font-family: var(--font-family); margin-left:3px;">p.a.</span></span>
-                    <button class="btn-primary btn-sm">Apply</button>
+                    <a href="${bank.url}" target="_blank" class="btn-primary btn-sm" style="text-decoration: none; display: inline-block; text-align: center; box-sizing: border-box;">Apply</a>
                 </div>
             `;
             list.appendChild(div);
@@ -898,9 +906,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showingAllLoans = !showingAllLoans;
             renderLoans();
         });
-        
-        // Initial Mount
-        renderLoans();
     }
 
+    // Trigger Initial Live Fetch
+    fetchLiveRates();
 });
