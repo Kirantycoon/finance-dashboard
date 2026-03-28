@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        if (localStorage.getItem('finance-app-theme') === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    </script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Overview</h1>
+            <div class="header-actions">
+                <label for="statement-upload" class="upload-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Upload Statement</span>
+                </label>
+                <input type="file" id="statement-upload" accept=".pdf,application/pdf" hidden multiple>
+                
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode">
+                    <svg class="sun-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <div class="user-profile" id="user-profile-btn" style="position: relative;">
+                    <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User Avatar">
+                    <!-- Profile Dropdown -->
+                    <div class="profile-dropdown hidden" id="profile-dropdown">
+                        <div class="profile-header-info">
+                            <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User">
+                            <div class="profile-meta">
+                                <h4>Demo User</h4>
+                                <p>Free Plan</p>
+                            </div>
+                        </div>
+                        <ul class="profile-menu">
+                            <li><a href="#" id="my-account-link">👤 My Account</a></li>
+                            <li><a href="#">⚙️ Settings</a></li>
+                            <li><a href="#">💳 Billing</a></li>
+                            <hr>
+                            <li><a href="#" style="color: var(--color-debit);">🚪 Sign Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <nav class="dashboard-tabs">
+            <button class="tab-btn active" data-target="tab-dashboard">Dashboard</button>
+            <button class="tab-btn hidden" id="tab-btn-analysis" data-target="tab-analysis">Statement Result</button>
+            <button class="tab-btn" data-target="tab-history">Upload History</button>
+        </nav>
+
+        <!-- TAB 1: DASHBOARD OVERVIEW -->
+        <div id="tab-dashboard" class="tab-pane active">
+            <!-- Top Summary Cards -->
+            <section class="summary-cards">
+                <div class="card income-card">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    </div>
+                    <div class="card-details">
+                        <p>Total Income</p>
+                        <h2 id="total-income">₹0</h2>
+                    </div>
+                </div>
+                <div class="card expense-card">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                    </div>
+                    <div class="card-details">
+                        <p>Total Expenses</p>
+                        <h2 id="total-expense">₹0</h2>
+                    </div>
+                </div>
+                <div class="card balance-card">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
+                    </div>
+                    <div class="card-details">
+                        <p>Balance</p>
+                        <h2 id="total-balance">₹0</h2>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monthly Insight -->
+            <section class="insight-section" style="margin-top: 2rem;">
+                <div class="insight-box">
+                    <span class="insight-icon">✨</span>
+                    <p id="monthly-insight">Loading insight...</p>
+                </div>
+            </section>
+
+            <!-- Main Content Layout -->
+            <div class="main-content" style="margin-top: 1.5rem;">
+                <!-- Left Side Content -->
+                <div class="left-content">
+                    <section class="transactions-section">
+                        <div class="section-header">
+                            <h2>Recent Transactions</h2>
+                            <button class="view-all">View All</button>
+                        </div>
+                        <div class="transactions-list" id="transactions-list">
+                            <!-- Dynamic transactions will be injected here -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Side Content (Categories & CIBIL) -->
+                <div class="side-content">
+                    
+                    <!-- Loan Comparison Section replacing Bank Widget -->
+                    <section class="loan-comparison-section">
+                        <div class="section-header">
+                            <h2 style="font-size: 1.25rem;">Loan Offers</h2>
+                            <button class="view-all" id="view-all-loans-btn">View All</button>
+                        </div>
+                        <div class="loans-list" id="loans-list">
+                            <!-- JS will inject loan items here -->
+                        </div>
+                    </section>
+
+                    <!-- Subscriptions Tracker -->
+                    <section class="subscription-section">
+                        <h2>Subscriptions & Bills</h2>
+                        <div class="subscription-list" id="subscription-list">
+                            <!-- Dynamic subscriptions will be injected here -->
+                        </div>
+                    </section>
+
+                    <!-- Category Summary (Moved back!) -->
+                    <section class="category-section">
+                        <h2>Category Summary</h2>
+                        <div class="category-summary-container">
+                            <div class="main-pie-wrapper">
+                                <div class="main-pie-chart" id="main-pie-chart"></div>
+                                <div class="main-pie-inner">
+                                    <span id="pie-total-expense" style="font-size: 1.1rem; font-weight: 700;">₹0</span>
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">Spent</span>
+                                </div>
+                            </div>
+                            <div class="category-legend" id="category-legend">
+                                <!-- Legend items injected here -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- CIBIL Report System -->
+                    <section class="cibil-section">
+                        <h2>CIBIL Credit Score</h2>
+                        <div class="cibil-card" id="cibil-container">
+                            <div class="cibil-cta" id="cibil-cta">
+                                <span class="cibil-icon">💳</span>
+                                <p>Check your credit health</p>
+                                <button class="btn-primary" id="check-cibil-btn">Generate Dummy Report</button>
+                            </div>
+                            <div class="cibil-score-display hidden" id="cibil-display">
+                                <div class="score-ring" id="score-ring">
+                                    <div class="score-ring-inner">
+                                        <h1 id="cibil-score">0</h1>
+                                        <span>Out of 900</span>
+                                    </div>
+                                </div>
+                                <h3 id="cibil-remark">Excellent</h3>
+                                <p class="cibil-date" id="cibil-date"></p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: STATEMENT ANALYSIS RESULT -->
+        <div id="tab-analysis" class="tab-pane">
+            <div class="analysis-grid">
+                <!-- Left Column: Parsed Data -->
+                <div class="parsed-data-section">
+                    <div class="modal-summary">
+                        <div class="stat-box">
+                            <p>Total Transactions</p>
+                            <h3 id="modal-total-tx">0</h3>
+                        </div>
+                        <div class="stat-box">
+                            <p>Total Credit</p>
+                            <h3 id="modal-total-credit" class="credit">₹0</h3>
+                        </div>
+                        <div class="stat-box">
+                            <p>Total Debit</p>
+                            <h3 id="modal-total-debit" class="debit">₹0</h3>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="analysis-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category Mapping</th>
+                                    <th style="text-align: right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analysis-table-body">
+                                <!-- Injected rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Column: Smart Loan Checker Logic -->
+                <div class="loan-analysis-wrapper">
+                    <section class="loan-section">
+                        <div class="section-header">
+                            <h2>Smart Loan Eligibility</h2>
+                            <small id="loan-warning" style="color: var(--text-muted);">Assessed directly against uploaded statement.</small>
+                        </div>
+                        <div class="loan-card" id="loan-card" style="padding: 1.5rem;">
+                            <!-- Auto-populates inside Tab without needing Analyze button -->
+                            <div class="loan-results" id="loan-results">
+                                <div class="loan-status-header">
+                                    <div>
+                                        <p>Prediction</p>
+                                        <h2 id="loan-decision" class="score-excellent">APPROVED</h2>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <p>Max Eligibility</p>
+                                        <h2 id="loan-amount">₹3,00,000</h2>
+                                    </div>
+                                </div>
+                                <div class="loan-metrics-grid" style="grid-template-columns: 1fr; gap: 1rem;">
+                                    
+                                    <div style="display: flex; justify-content: space-around; align-items: center; background: var(--item-bg); padding: 1rem; border-radius: 14px; border: 1px solid var(--card-border);">
+                                        <div class="loan-metric-box">
+                                            <h4>EMI vs Income Ratio</h4>
+                                        </div>
+                                        <div class="emi-pie-wrapper" style="width: 100px; height: 100px;">
+                                            <div class="emi-pie-chart" id="emi-pie"></div>
+                                            <div class="emi-pie-inner" style="inset: 10px;">
+                                                <span id="emi-ratio-text" style="font-size: 1.1rem;">0%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="loan-factors">
+                                        <div class="factor-row">
+                                            <span>Income > ₹25k</span>
+                                            <span id="fact-income">✅</span>
+                                        </div>
+                                        <div class="factor-row">
+                                            <span>EMI Ratio < 40%</span>
+                                            <span id="fact-emi">✅</span>
+                                        </div>
+                                        <div class="factor-row">
+                                            <span>No Bounces Detected</span>
+                                            <span id="fact-bounce">✅</span>
+                                        </div>
+                                        <div class="factor-row">
+                                            <span>CIBIL > 720</span>
+                                            <span id="fact-cibil">❌</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="loan-footer">
+                                    <span class="risk-badge" id="risk-badge">Low Risk</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="import-actions">
+                        <button id="discard-import" class="btn-secondary">Discard Statement</button>
+                        <button id="confirm-import" class="btn-primary">Import Data to Dashboard</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: UPLOAD HISTORY -->
+        <div id="tab-history" class="tab-pane">
+            <section class="history-section card" style="padding: 2rem;">
+                <div class="section-header" style="margin-bottom: 2rem;">
+                    <h2>Processed Statement History</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">Review past bank statements safely stored locally on your device.</p>
+                </div>
+                
+                <div class="table-container history-table-wrapper" style="max-height: 600px; overflow-y: auto;">
+                    <table class="analysis-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>File Name</th>
+                                <th>Income Evaluated</th>
+                                <th>EMI Ratio</th>
+                                <th>Risk Level</th>
+                                <th>Eligibility</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- JS Injected Records -->
+                        </tbody>
+                    </table>
+                    <div id="no-history-msg" class="hidden" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📂</div>
+                        <p style="font-size: 1.1rem; font-weight: 500;">No statements processed yet.</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Upload a PDF to see it logged here safely.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+    <!-- User Account Modal -->
+    <div class="modal-overlay hidden" id="account-modal">
+        <div class="account-modal-content">
+            <div class="modal-header">
+                <h2>My Account</h2>
+                <button class="close-modal" id="close-account-modal">&times;</button>
+            </div>
+            <div class="account-details-body">
+                <div class="account-profile-header">
+                    <img src="https://ui-avatars.com/api/?name=User&background=random&size=80" alt="Avatar">
+                    <div>
+                        <h3>Demo User</h3>
+                        <span class="badge">Free Plan Active</span>
+                    </div>
+                </div>
+                <div class="account-info-grid">
+                    <div class="info-group">
+                        <label>Email Address</label>
+                        <p>demo.user@example.com</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Phone Number</label>
+                        <p>+91 98765 43210</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Member Since</label>
+                        <p>October 2023</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Currency Preference</label>
+                        <p>INR (₹)</p>
+                    </div>
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-top: 1.5rem;">Edit Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Details Modal -->
+    <div class="modal-overlay hidden" id="history-modal">
+        <div class="account-modal-content" style="max-width: 480px;">
+            <div class="modal-header">
+                <h2>Analysis Breakdown</h2>
+                <button class="close-modal" id="close-history-modal">&times;</button>
+            </div>
+            <div class="account-details-body" id="history-details-body">
+                <!-- JS Inject Details -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
