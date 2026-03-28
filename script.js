@@ -655,39 +655,57 @@ function runLoanAnalysis(txArray) {
 
 function renderHistory() {
     const historyStr = localStorage.getItem('finance-history');
-    const tbody = document.getElementById('history-table-body');
+    const gridEl = document.getElementById('history-grid');
     const noMsg = document.getElementById('no-history-msg');
-    const tableEl = document.getElementById('history-table');
 
-    if (!tbody || !noMsg || !tableEl) return;
+    if (!gridEl || !noMsg) return;
 
     if (!historyStr || historyStr === '[]') {
         noMsg.classList.remove('hidden');
-        tableEl.classList.add('hidden');
+        gridEl.classList.add('hidden');
         return;
     }
 
     const historyData = JSON.parse(historyStr);
     noMsg.classList.add('hidden');
-    tableEl.classList.remove('hidden');
-    tbody.innerHTML = '';
+    gridEl.classList.remove('hidden');
+    gridEl.innerHTML = '';
 
     historyData.forEach(record => {
-        const tr = document.createElement('tr');
+        const card = document.createElement('div');
+        card.className = 'history-card';
         const statusColor = record.loanStatus === 'APPROVED' ? 'var(--color-credit)' : (record.loanStatus === 'MANUAL REVIEW' ? 'var(--color-accent)' : 'var(--color-debit)');
         
-        tr.innerHTML = `
-            <td style="font-size: 0.9rem; color: var(--text-muted);">${record.date}</td>
-            <td style="font-weight: 500; font-family: monospace;">${record.fileName}</td>
-            <td>${formatCurrency(record.income)}</td>
-            <td>${record.emiRatio}</td>
-            <td><span class="badge" style="background: rgba(139, 92, 246, 0.1); color: var(--color-accent); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem;">${record.riskLevel}</span></td>
-            <td style="font-weight: 700; color: ${statusColor};">${record.loanStatus}</td>
-            <td style="text-align: right;">
-                <button class="btn-primary btn-sm view-history-btn" data-id="${record.id}">View Details</button>
-            </td>
+        card.innerHTML = `
+            <div class="h-card-header">
+                <div class="h-card-icon">📄</div>
+                <div class="h-card-title">
+                    <h4>${record.fileName}</h4>
+                    <p>${record.date}</p>
+                </div>
+            </div>
+            <div class="h-card-body">
+                <div class="h-stat">
+                    <p>Verified Income</p>
+                    <h3 style="color: var(--color-credit);">${formatCurrency(record.income)}</h3>
+                </div>
+                <div class="h-stat">
+                    <p>EMI Burden</p>
+                    <h3>${record.emiRatio}</h3>
+                </div>
+                <div class="h-stat" style="grid-column: span 2;">
+                    <p>Risk Level</p>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; margin-top: 0.25rem;">
+                        <span class="history-badge">${record.riskLevel}</span>
+                        <strong style="color: ${statusColor}; font-size: 1.1rem;">${record.loanStatus}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="h-card-footer">
+                <button class="btn-primary view-history-btn" data-id="${record.id}" style="width: 100%; border-radius: 10px; padding: 0.6rem;">Analyze Complete Report</button>
+            </div>
         `;
-        tbody.appendChild(tr);
+        gridEl.appendChild(card);
     });
 
     // Bind Detail Modals

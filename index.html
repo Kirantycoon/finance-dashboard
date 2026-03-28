@@ -46,7 +46,7 @@
                             <li><a href="#">⚙️ Settings</a></li>
                             <li><a href="#">💳 Billing</a></li>
                             <hr>
-                            <li><a href="#" style="color: var(--color-debit);">🚪 Sign Out</a></li>
+                            <li><a href="login.html" style="color: var(--color-debit);">🚪 Sign Out</a></li>
                         </ul>
                     </div>
                 </div>
@@ -292,23 +292,10 @@
                     <p style="color: var(--text-muted); font-size: 0.95rem;">Review past bank statements safely stored locally on your device.</p>
                 </div>
                 
-                <div class="table-container history-table-wrapper" style="max-height: 600px; overflow-y: auto;">
-                    <table class="analysis-table" id="history-table">
-                        <thead>
-                            <tr>
-                                <th>Date & Time</th>
-                                <th>File Name</th>
-                                <th>Income Evaluated</th>
-                                <th>EMI Ratio</th>
-                                <th>Risk Level</th>
-                                <th>Eligibility</th>
-                                <th style="text-align: right;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-table-body">
-                            <!-- JS Injected Records -->
-                        </tbody>
-                    </table>
+                <div class="history-wrapper" style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
+                    <div class="history-grid" id="history-grid">
+                        <!-- JS Injected Cards -->
+                    </div>
                     <div id="no-history-msg" class="hidden" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">📂</div>
                         <p style="font-size: 1.1rem; font-weight: 500;">No statements processed yet.</p>

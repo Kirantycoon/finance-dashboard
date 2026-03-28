@@ -253,3 +253,20 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 .info-group p { font-size: 1rem; color: var(--text-main); font-weight: 500; }
 
 @media (max-width: 860px) { body { padding: 1.5rem; } .main-content, .analysis-grid { grid-template-columns: 1fr; } }
+
+/* History Card Grid Overhaul */
+.history-wrapper::-webkit-scrollbar { width: 6px; }
+.history-wrapper::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 4px; }
+.history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; animation: fadeIn 0.4s ease-out; }
+.history-card { background: var(--item-bg); border: 1px solid var(--card-border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+.history-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.4); border-color: var(--color-accent); }
+.h-card-header { padding: 1.25rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.h-card-icon { width: 42px; height: 42px; background: rgba(139, 92, 246, 0.15); color: var(--color-accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.h-card-title { display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; }
+.h-card-title h4 { margin: 0; font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
+.h-card-title p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+.h-card-body { padding: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex: 1; }
+.h-stat p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem; font-weight: 500; }
+.h-stat h3 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+.history-badge { background: rgba(139, 92, 246, 0.15); color: var(--color-accent); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+.h-card-footer { padding: 1rem; background: rgba(0,0,0,0.1); border-top: 1px solid var(--card-border); }
