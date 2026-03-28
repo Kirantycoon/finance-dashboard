@@ -286,20 +286,24 @@
 
         <!-- TAB 3: UPLOAD HISTORY -->
         <div id="tab-history" class="tab-pane">
-            <section class="history-section card" style="padding: 2rem;">
-                <div class="section-header" style="margin-bottom: 2rem;">
-                    <h2>Processed Statement History</h2>
-                    <p style="color: var(--text-muted); font-size: 0.95rem;">Review past bank statements safely stored locally on your device.</p>
+            <section class="history-section card" style="padding: 2.5rem; background: linear-gradient(145deg, var(--card-bg), rgba(30, 41, 59, 0.4)); border: 1px solid var(--card-border);">
+                
+                <div class="history-hero" style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+                    <div style="width: 70px; height: 70px; border-radius: 20px; background: linear-gradient(135deg, var(--color-accent), #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);">🏦</div>
+                    <div style="flex: 1;">
+                        <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.2rem; letter-spacing: -0.5px; background: linear-gradient(90deg, #fff, var(--text-muted)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Secure Statement Vault</h2>
+                        <p style="color: var(--text-muted); font-size: 1rem; font-weight: 500; font-family: var(--font-family);">Your encrypted analysis reports are stored strictly offline on your personal device.</p>
+                    </div>
                 </div>
                 
                 <div class="history-wrapper" style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
                     <div class="history-grid" id="history-grid">
                         <!-- JS Injected Cards -->
                     </div>
-                    <div id="no-history-msg" class="hidden" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📂</div>
-                        <p style="font-size: 1.1rem; font-weight: 500;">No statements processed yet.</p>
-                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Upload a PDF to see it logged here safely.</p>
+                    <div id="no-history-msg" class="hidden" style="text-align: center; padding: 5rem 1rem; color: var(--text-muted); background: rgba(0,0,0,0.15); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.05); margin-top: 1rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.6; filter: drop-shadow(0 0 15px rgba(99,102,241,0.2));">🗄️</div>
+                        <h3 style="font-size: 1.5rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.75rem;">The Vault is Empty</h3>
+                        <p style="font-size: 1rem; max-width: 320px; margin: 0 auto; line-height: 1.6;">Jump back to your Dashboard and securely upload a Bank Statement PDF to generate your first analysis report.</p>
                     </div>
                 </div>
             </section>
