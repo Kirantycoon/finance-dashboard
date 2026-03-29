@@ -384,60 +384,76 @@ document.getElementById('statement-upload').addEventListener('change', async fun
     e.target.value = '';
 });
 
+function detectCategory(desc, type) {
+    let dLower = desc.toLowerCase();
+    if (dLower.includes('salary') || dLower.includes('refund') || dLower.includes('deposit') || 
+        dLower.includes('received') || dLower.includes('neft cr') || dLower.includes('rtgs cr') || type === 'credit') {
+        return 'Income';
+    }
+    if (dLower.includes('swiggy') || dLower.includes('zomato') || dLower.includes('restaurant') || dLower.includes('food') || dLower.includes('mcdonald') || dLower.includes('starbucks')) {
+        return 'Food';
+    } else if (dLower.includes('amazon') || dLower.includes('flipkart') || dLower.includes('myntra') || dLower.includes('zara') || dLower.includes('dmart') || dLower.includes('reliance')) {
+        return 'Shopping';
+    } else if (dLower.includes('rent') || dLower.includes('emi') || dLower.includes('loan') || dLower.includes('hdb') || dLower.includes('bajaj') || dLower.includes('muthoot') || dLower.includes('homeloan')) {
+        return 'Rent';
+    }
+    return 'Other';
+}
+
 function parseSpreadsheetData(rows) {
     pendingTransactions = [];
     
+    // Header aliases dictionaries to catch HDFC, ICICI, SBI variations
+    const aliases = {
+        date: ['date', 'value dt', 'txn date', 'transaction date', 'txn. date'],
+        desc: ['narration', 'description', 'remarks', 'particulars', 'details', 'transaction remarks'],
+        debit: ['withdrawal', 'debit', 'dr', 'dr.', 'paid out'],
+        credit: ['deposit', 'credit', 'cr', 'cr.', 'paid in'],
+        amount: ['amount', 'txn amount', 'transaction amount']
+    };
+
+    const isMatch = (key, aliasArray) => aliasArray.some(alias => key.toLowerCase().includes(alias));
+
     rows.forEach(row => {
-        let desc = "";
+        let desc = "Spreadsheet Transaction";
         let amount = 0;
-        let isCredit = false;
-        let dateVal = new Date().toLocaleDateString('en-GB'); 
+        let isCredit = null; 
+        let dateVal = ""; 
 
         for (let key in row) {
             let val = String(row[key]).trim();
             if (!val) continue;
-            let kLower = key.toLowerCase();
             
-            if (kLower.includes("date")) dateVal = val;
-            if (kLower.includes("desc") || kLower.includes("particular") || kLower.includes("narration") || kLower.includes("detail")) {
-               desc = val;
-            }
+            if (isMatch(key, aliases.date)) dateVal = val;
+            if (isMatch(key, aliases.desc)) desc = val;
 
             let parsed = parseFloat(val.replace(/[^\d.-]/g, ''));
-            if (kLower.includes("credit") || kLower.includes("deposit") || kLower.includes("cr.")) {
+            
+            if (isMatch(key, aliases.credit)) {
                 if (!isNaN(parsed) && parsed > 0) { amount = parsed; isCredit = true; }
-            } else if (kLower.includes("debit") || kLower.includes("withdrawal") || kLower.includes("dr.")) {
+            } else if (isMatch(key, aliases.debit)) {
                 if (!isNaN(parsed) && parsed > 0) { amount = parsed; isCredit = false; }
-            } else if (kLower.includes("amount")) {
+            } else if (isMatch(key, aliases.amount)) {
                  if (!isNaN(parsed) && parsed !== 0) {
                      amount = Math.abs(parsed);
                      if (parsed > 0 || String(row["Type"]).toLowerCase().includes("cr") || String(row["CR/DR"]).toLowerCase().includes("cr")) {
                          isCredit = true;
-                     } 
+                     } else {
+                         isCredit = false; 
+                     }
                  }
             }
         }
         
-        if (!desc) {
-            let strCols = Object.values(row).filter(v => typeof v === 'string' && isNaN(parseFloat(v)) && v.length > 3);
-            if (strCols.length > 0) desc = strCols[0];
-        }
-
-        if (desc === "") desc = "Spreadsheet Transaction";
+        // Skip empty or meta configuration rows securely
+        if (!dateVal || (!amount && amount !== 0)) return;
         if (desc.length > 35) desc = desc.substring(0, 35);
+        if (desc.trim() === "") desc = "Spreadsheet Transaction";
         
         if (amount > 0) {
-            let type = isCredit ? 'credit' : 'debit';
-            let category = 'Other';
-            let dLower = desc.toLowerCase();
-
-            if (dLower.includes('salary') || dLower.includes('refund') || dLower.includes('deposit') || dLower.includes('received') || type === 'credit') {
-                type = 'credit'; category = 'Income';
-            } else {
-                if (dLower.includes('swiggy') || dLower.includes('zomato') || dLower.includes('restaurant') || dLower.includes('food')) category = 'Food';
-                else if (dLower.includes('amazon') || dLower.includes('flipkart') || dLower.includes('myntra') || dLower.includes('zara')) category = 'Shopping';
-                else if (dLower.includes('rent') || dLower.includes('emi') || dLower.includes('loan') || dLower.includes('bajaj')) category = 'Rent';
-            }
+            let type = (isCredit === true) ? 'credit' : 'debit';
+            let category = detectCategory(desc, type);
+            if(category === 'Income') type = 'credit';
 
             pendingTransactions.push({ date: dateVal, description: desc, amount: amount, type: type, category: category });
         }
@@ -456,71 +472,75 @@ function parseSpreadsheetData(rows) {
 function parsePDFText(lines) {
     pendingTransactions = [];
     
-    // Highly permissive regex capturing dates like: 05/03/24, 05-Mar-2024, 5.3.2024, 05 03 24
-    const dateRegex = /\b\d{1,2}[\/\-\s\.!]+(?:[a-zA-Z]{3,4}|\d{1,2})[\/\-\s\.!]+\d{2,4}\b/;
-    const globalDateRegex = new RegExp(dateRegex, 'g');
-    
-    let textBuffer = lines.join(" ");
-    let datesFound = textBuffer.match(globalDateRegex) || [];
-    let possibleLines = textBuffer.split(dateRegex);
+    // Robust Indian Bank date formats (12/03/24, 12-Jan-2024, 12.03.2024, 12 03 24)
+    const dateRegex = /\b\d{1,2}[\/\-\s\.!]+(?:[a-zA-Z]{3,4}|\d{1,2})[\/\-\s\.!]+\d{2,4}\b/g;
+    // Commas in thousands delimiter parsing
+    const moneyRegex = /\b\d{1,3}(?:,\d{2,3})*(?:\.\d{1,2})\b/g;
 
-    for (let i = 0; i < Math.min(datesFound.length, possibleLines.length - 1); i++) {
-        let date = datesFound[i].trim();
-        let chunk = possibleLines[i+1].trim();
-        let parts = chunk.split(/\s+/);
+    let textBuffer = lines.join(" ");
+    dateRegex.lastIndex = 0;
+    
+    let match;
+    let transactionsFound = [];
+
+    while ((match = dateRegex.exec(textBuffer)) !== null) {
+        transactionsFound.push({
+            date: match[0].trim(),
+            index: match.index
+        });
+    }
+
+    for (let i = 0; i < transactionsFound.length; i++) {
+        let currentTx = transactionsFound[i];
+        let nextIndex = (i < transactionsFound.length - 1) ? transactionsFound[i+1].index : textBuffer.length;
         
-        let amount = 0;
-        let descParts = [];
-        let isCredit = false;
-        
-        for (let p of parts) {
-            let cleanP = p.replace(/,/g, '').trim();
-            if (p.toUpperCase() === 'CR' || p.toUpperCase() === 'CREDIT' || p.includes('+')) isCredit = true;
-            if (p.toUpperCase() === 'DR' || p.toUpperCase() === 'DEBIT' || p.includes('-')) isCredit = false;
-            
-            // Smarter number parsing to avoid logging long transactional ref numbers as amounts
-            if (cleanP.length > 0 && /^[0-9]+(\.[0-9]{1,2})?$/.test(cleanP) && parseFloat(cleanP) > 0) {
-                let candidateAmt = parseFloat(cleanP);
-                if (candidateAmt > amount && candidateAmt < 10000000) {
-                    amount = candidateAmt;
-                }
-            } else {
-                if (p.trim().length > 1 && !/^[0-9]+$/.test(p) && p.toUpperCase() !== 'CR' && p.toUpperCase() !== 'DR') {
-                    descParts.push(p);
-                }
+        let chunk = textBuffer.substring(currentTx.index + currentTx.date.length, nextIndex).trim();
+        if (!chunk) continue;
+
+        moneyRegex.lastIndex = 0;
+        let amountMatches = [];
+        let mMatch;
+        while ((mMatch = moneyRegex.exec(chunk)) !== null) {
+            amountMatches.push(mMatch[0]);
+        }
+
+        let parsedAmount = 0;
+        if (amountMatches.length > 0) {
+            let candidateAmt = parseFloat(amountMatches[0].replace(/,/g, ''));
+            if(candidateAmt > 0 && candidateAmt < 10000000) {
+               parsedAmount = candidateAmt;
             }
         }
-        
-        let desc = descParts.join(" ").trim();
-        if (desc.length > 35) desc = desc.substring(0, 35);
-        if (desc === "") desc = "Bank Transaction";
 
-        let type = isCredit ? 'credit' : 'debit';
-        let category = 'Other';
-        let dLower = desc.toLowerCase();
+        if (parsedAmount > 0) {
+            let isCredit = false;
+            let upperChunk = chunk.toUpperCase();
+            
+            // Checking explicit array suffix indicators
+            if (upperChunk.includes(' CR') || upperChunk.includes('CREDIT') || upperChunk.includes('DEPOSIT')) {
+                isCredit = true;
+            } else if (upperChunk.includes(' DR') || upperChunk.includes('DEBIT') || upperChunk.includes('WITHDRAWAL')) {
+                isCredit = false;
+            }
 
-        // Income detection
-        if (dLower.includes('salary') || dLower.includes('refund') || dLower.includes('deposit') || dLower.includes('received') || dLower.includes('neft cr')) {
-            type = 'credit';
-            category = 'Income';
-        }
+            let cleanDesc = chunk.replace(moneyRegex, '').replace(/CR|DR/gi, '').trim().substring(0, 35);
+            if (cleanDesc.length < 3) cleanDesc = "Bank Transaction";
 
-        // Categorization rules
-        if (type === 'debit') {
-            if (dLower.includes('swiggy') || dLower.includes('zomato') || dLower.includes('restaurant') || dLower.includes('food')) category = 'Food';
-            else if (dLower.includes('amazon') || dLower.includes('flipkart') || dLower.includes('myntra') || dLower.includes('zara')) category = 'Shopping';
-            else if (dLower.includes('rent') || dLower.includes('emi') || dLower.includes('loan') || dLower.includes('hdb') || dLower.includes('bajaj')) category = 'Rent';
-        } else {
-            category = 'Income';
-        }
+            let type = isCredit ? 'credit' : 'debit';
+            let category = detectCategory(cleanDesc, type);
+            if (category === 'Income') type = 'credit';
 
-        if (amount > 0) {
-            pendingTransactions.push({ date, description: desc, amount, type, category });
+            pendingTransactions.push({ 
+                date: currentTx.date, 
+                description: cleanDesc, 
+                amount: parsedAmount, 
+                type: type, 
+                category: category 
+            });
         }
     }
 
     if (pendingTransactions.length > 0) {
-        // Activate Statement Tab
         const analysisBtn = document.getElementById('tab-btn-analysis');
         analysisBtn.classList.remove('hidden');
         analysisBtn.click();
@@ -534,7 +554,7 @@ function parsePDFText(lines) {
         
         runLoanAnalysis(pendingTransactions);
     } else {
-        const testModeMsg = confirm("PDF read correctly, but we couldn't automatically map the specific formatting of this bank to standard transactions. Would you like to generate a Sample Valid Statement instead so you can immediately see the engines in action?");
+        const testModeMsg = confirm("PDF read correctly, but formatting blocked automatic parsing (Ensure it isn't password protected). Would you like to generate a Sample Valid Statement instead?");
         if (testModeMsg) {
             generateMockStatement();
         } else {
