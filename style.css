@@ -250,23 +250,30 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 #cibil-remark { font-size: 1.6rem; font-weight: 600; margin-top: 0.5rem; transition: color 0.3s ease; }
 
 /* Status Colors */
-.score-excellent { color: #10b981 !important; text-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
-.score-good { color: #3b82f6 !important; text-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
-.score-average { color: #f59e0b !important; text-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
-.score-poor { color: #ef4444 !important; text-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+.score-excellent { color: #10b981 !important; }
+.score-good { color: #3b82f6 !important; }
+.score-average { color: #f59e0b !important; }
+.score-poor { color: #ef4444 !important; }
 .hidden { display: none !important; }
 
 /* TAB 2: PDF Parsing Analysis Grids */
 .analysis-grid { display: grid; grid-template-columns: 1.6fr 1.2fr; gap: 1.5rem; }
 .table-container { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 1.5em; max-height: 550px; overflow-y: auto; }
 .parsed-data-section, .loan-analysis-wrapper { display: flex; flex-direction: column; gap: 1.5rem; }
-.modal-summary { display: flex; gap: 1.5rem; padding: 1.5rem; background: var(--item-bg); border-radius: 20px; border: 1px solid var(--card-border); }
-.stat-box { flex: 1; background: var(--bg-color); padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--card-border); }
+.modal-summary { display: flex; gap: 1.5rem; padding: 2rem; background: var(--item-bg); border-radius: 20px; border: 1px solid var(--card-border); }
+.stat-box { flex: 1; background: var(--bg-color); padding: 1.5rem 2rem; border-radius: 12px; border: 1px solid var(--card-border); }
 .stat-box p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 500; }
 .stat-box h3 { font-size: 1.5rem; font-weight: 600; }
 .analysis-table { width: 100%; border-collapse: collapse; }
 .analysis-table th { text-align: left; padding: 0.5rem 0.5rem 1rem; color: var(--text-muted); font-weight: 500; font-size: 0.9rem; border-bottom: 1px solid var(--card-border); position: sticky; top: 0; background: var(--card-bg); z-index: 1; }
 .analysis-table td { padding: 1rem 0.5rem; border-bottom: 1px solid var(--item-bg); font-size: 0.95rem; color: var(--tx-desc-color); }
+
+.category-pill { display: inline-block; padding: 0.35rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.pill-food { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.pill-rent { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.pill-shopping { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.pill-income { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.pill-other { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
 
 .import-actions { display: flex; justify-content: flex-end; gap: 1rem; background: var(--card-bg); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--card-border); }
 .btn-secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text-main); padding: 0.75rem 1.5rem; border-radius: 12px; cursor: pointer; font-family: inherit; font-weight: 500; transition: background 0.2s; }
@@ -332,3 +339,7 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 .form-control:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
 .form-control::placeholder { color: var(--text-muted); opacity: 0.6; }
 
+/* Back to Top Button */
+.back-to-top-btn { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; background: var(--color-accent); color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s ease; z-index: 999; }
+.back-to-top-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.back-to-top-btn:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6); }

@@ -37,23 +37,28 @@ function formatCurrency(amount) {
 // -----------------------------------------
 
 function calculateFinancialHealth(balance, totalIncome, categoryTotals) {
-    let score = 500; // Base score average
+    let score = 50; // Base score out of 100
     if (totalIncome > 0) {
+        // Evaluate Savings (Good savings -> + points)
         let savingsRatio = balance / totalIncome;
-        if (savingsRatio > 0) {
-            score += Math.min(savingsRatio * 500, 300);
-        } else {
-            score -= Math.min(Math.abs(savingsRatio) * 300, 200);
-        }
+        if (savingsRatio >= 0.30) score += 20;
+        else if (savingsRatio >= 0.15) score += 10;
+        else if (savingsRatio < 0.05) score -= 15;
         
-        let rentRatio = (categoryTotals['Rent'] || 0) / totalIncome;
-        if (rentRatio < 0.3) score += 100;
-        else if (rentRatio > 0.5) score -= 100;
-        
-        score += 100; // Baseline bump for active income
+        // Evaluate EMI / Obligations (Low EMI -> + points)
+        let emiRatio = (categoryTotals['Rent'] || 0) / totalIncome; // Rent tab maps EMI
+        if (emiRatio <= 0.20) score += 20;
+        else if (emiRatio <= 0.35) score += 10;
+        else if (emiRatio > 0.50) score -= 20;
+
+        // Evaluate Variable Expenses (High expense -> - points)
+        let expenseRatio = ((categoryTotals['Food'] || 0) + (categoryTotals['Shopping'] || 0)) / totalIncome;
+        if (expenseRatio > 0.40) score -= 15;
+        else if (expenseRatio <= 0.20) score += 10;
     }
     
-    score = Math.max(300, Math.min(Math.round(score), 1000));
+    // Boundary Caps
+    score = Math.max(10, Math.min(Math.round(score), 100));
     
     const dial = document.getElementById('health-dial-progress');
     const scoreText = document.getElementById('health-score');
@@ -61,26 +66,29 @@ function calculateFinancialHealth(balance, totalIncome, categoryTotals) {
     const summary = document.getElementById('health-summary');
     
     if (dial) {
-        let percentage = ((score - 300) / 700) * 100;
         setTimeout(() => {
-            dial.style.background = `conic-gradient(var(--color-accent) ${percentage}%, transparent 0)`;
+            dial.style.background = `conic-gradient(var(--color-accent) ${score}%, transparent 0)`;
         }, 100);
     }
     if (scoreText) scoreText.textContent = score;
     
     if (grade && summary) {
-        if (score >= 800) { 
-            grade.textContent = 'Excellent'; 
+        if (score >= 80) { 
+            grade.textContent = '(Healthy)'; 
             grade.style.color = 'var(--color-credit)'; 
-            summary.textContent = "Your financial health is in top shape! Exceptional savings and low debt burden."; 
-        } else if (score >= 600) { 
-            grade.textContent = 'Good'; 
+            summary.textContent = "Strong financial baseline! Great savings and responsible spending."; 
+        } else if (score >= 60) { 
+            grade.textContent = '(Good)'; 
             grade.style.color = 'var(--color-accent)'; 
-            summary.textContent = "You are doing well, but there is room to optimize your variable spending."; 
-        } else { 
-            grade.textContent = 'Needs Work'; 
+            summary.textContent = "Stable. Try cutting down variable expenses to boost savings."; 
+        } else if (score >= 40) { 
+            grade.textContent = '(At Risk)'; 
+            grade.style.color = '#f59e0b'; 
+            summary.textContent = "Moderate risk. High fixed obligations or overspending detected."; 
+        } else {
+            grade.textContent = '(Unhealthy)'; 
             grade.style.color = 'var(--color-debit)'; 
-            summary.textContent = "High spending detected. Consider tracking your expenses more closely."; 
+            summary.textContent = "Critical financial health. Your spending severely outpaces saving."; 
         }
     }
 }
@@ -147,7 +155,7 @@ function initDashboard() {
         'Food': 0, 'Rent': 0, 'Shopping': 0, 'Income': 0, 'Other': 0
     };
 
-    transactions.forEach(tx => {
+    transactions.forEach((tx, idx) => {
         if (tx.type === 'credit') {
             totalIncome += tx.amount;
         } else {
@@ -159,30 +167,32 @@ function initDashboard() {
             }
         }
 
-        const div = document.createElement('div');
-        div.className = 'transaction-item';
-        
-        const sign = tx.type === 'credit' ? '+' : '-';
-        const amountClass = tx.type === 'credit' ? 'credit' : 'debit';
-        
-        div.innerHTML = `
-            <div class="tx-info">
-                <span class="tx-desc">${tx.description}</span>
-                <span class="tx-date">${tx.date} • 
-                    <select class="category-select" data-id="${tx.id}">
-                        <option value="Food" ${tx.category === 'Food' ? 'selected' : ''}>Food</option>
-                        <option value="Rent" ${tx.category === 'Rent' ? 'selected' : ''}>Rent</option>
-                        <option value="Shopping" ${tx.category === 'Shopping' ? 'selected' : ''}>Shopping</option>
-                        <option value="Income" ${tx.category === 'Income' ? 'selected' : ''}>Income</option>
-                        <option value="Other" ${tx.category === 'Other' ? 'selected' : ''}>Other</option>
-                    </select>
-                </span>
-            </div>
-            <div class="tx-amount ${amountClass}">
-                ${sign}${formatCurrency(tx.amount)}
-            </div>
-        `;
-        txList.appendChild(div);
+        if (idx < 10) {
+            const div = document.createElement('div');
+            div.className = 'transaction-item';
+            
+            const sign = tx.type === 'credit' ? '+' : '-';
+            const amountClass = tx.type === 'credit' ? 'credit' : 'debit';
+            
+            div.innerHTML = `
+                <div class="tx-info">
+                    <span class="tx-desc">${tx.description}</span>
+                    <span class="tx-date">${tx.date} • 
+                        <select class="category-select" data-id="${tx.id}">
+                            <option value="Food" ${tx.category === 'Food' ? 'selected' : ''}>Food</option>
+                            <option value="Rent" ${tx.category === 'Rent' ? 'selected' : ''}>Rent</option>
+                            <option value="Shopping" ${tx.category === 'Shopping' ? 'selected' : ''}>Shopping</option>
+                            <option value="Income" ${tx.category === 'Income' ? 'selected' : ''}>Income</option>
+                            <option value="Other" ${tx.category === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                    </span>
+                </div>
+                <div class="tx-amount ${amountClass}">
+                    ${sign}${formatCurrency(tx.amount)}
+                </div>
+            `;
+            txList.appendChild(div);
+        }
     });
 
     const balance = totalIncome - totalExpense;
@@ -464,16 +474,39 @@ function parseSpreadsheetData(rows) {
         document.getElementById('tab-btn-analysis').click();
         populateAnalysisTab();
         runLoanAnalysis(pendingTransactions);
+        autoSaveStatement();
     } else {
         alert("Spreadsheet parsed successfully, but no valid transactions were detected.");
     }
 }
 
+function formatParsedDate(dateStr) {
+    let standard = dateStr.replace(/[\.\/!]/g, '-').trim();
+    let parts = standard.split(/[\-\s]+/);
+    if (parts.length >= 3) {
+        let day = parts[0].padStart(2, '0');
+        let month = parts[1];
+        let year = parts[2];
+        if (year.length === 2) year = "20" + year; 
+        
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        if (!isNaN(month)) {
+            let mIndex = parseInt(month, 10) - 1;
+            if (mIndex >= 0 && mIndex < 12) month = monthNames[mIndex];
+        } else {
+            month = month.substring(0,3);
+            month = month.charAt(0).toUpperCase() + month.slice(1).toLowerCase();
+        }
+        return `${day} ${month} ${year}`;
+    }
+    return dateStr;
+}
+
 function parsePDFText(lines) {
     pendingTransactions = [];
     
-    // Robust Indian Bank date formats (12/03/24, 12-Jan-2024, 12.03.2024, 12 03 24)
-    const dateRegex = /\b\d{1,2}[\/\-\s\.!]+(?:[a-zA-Z]{3,4}|\d{1,2})[\/\-\s\.!]+\d{2,4}\b/g;
+    // Robust Indian Bank date formats
+    const dateRegex = /\b\d{1,2}[\/\-\s\.!]+(?:[a-zA-Z]{3,4}|\d{1,2})[\/\-\s\.!]+(?:\d{4}|\d{2})\b/g;
     // Commas in thousands delimiter parsing
     const moneyRegex = /\b\d{1,3}(?:,\d{2,3})*(?:\.\d{1,2})\b/g;
 
@@ -524,6 +557,7 @@ function parsePDFText(lines) {
             }
 
             let cleanDesc = chunk.replace(moneyRegex, '').replace(/CR|DR/gi, '').trim().substring(0, 35);
+            cleanDesc = cleanDesc.replace(/WITHAWAL/gi, 'WITHDRAWAL');
             if (cleanDesc.length < 3) cleanDesc = "Bank Transaction";
 
             let type = isCredit ? 'credit' : 'debit';
@@ -531,7 +565,7 @@ function parsePDFText(lines) {
             if (category === 'Income') type = 'credit';
 
             pendingTransactions.push({ 
-                date: currentTx.date, 
+                date: formatParsedDate(currentTx.date), 
                 description: cleanDesc, 
                 amount: parsedAmount, 
                 type: type, 
@@ -553,6 +587,7 @@ function parsePDFText(lines) {
         }
         
         runLoanAnalysis(pendingTransactions);
+        autoSaveStatement();
     } else {
         const testModeMsg = confirm("PDF read correctly, but formatting blocked automatic parsing (Ensure it isn't password protected). Would you like to generate a Sample Valid Statement instead?");
         if (testModeMsg) {
@@ -581,6 +616,7 @@ function generateMockStatement() {
     
     populateAnalysisTab();
     runLoanAnalysis(pendingTransactions);
+    autoSaveStatement();
     document.getElementById('statement-upload').value = '';
 }
 
@@ -601,15 +637,9 @@ function populateAnalysisTab() {
             <td>${tx.date}</td>
             <td>${tx.description}</td>
             <td>
-                <select class="category-select" data-index="${idx}">
-                    <option value="Food" ${tx.category === 'Food' ? 'selected' : ''}>Food</option>
-                    <option value="Rent" ${tx.category === 'Rent' ? 'selected' : ''}>Rent</option>
-                    <option value="Shopping" ${tx.category === 'Shopping' ? 'selected' : ''}>Shopping</option>
-                    <option value="Income" ${tx.category === 'Income' ? 'selected' : ''}>Income</option>
-                    <option value="Other" ${tx.category === 'Other' ? 'selected' : ''}>Other</option>
-                </select>
+                <span class="category-pill pill-${tx.category.toLowerCase()}">${tx.category}</span>
             </td>
-            <td style="text-align: right;" class="${amtClass}">${sign}${formatCurrency(tx.amount)}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;" class="${amtClass}">${sign}${formatCurrency(tx.amount)}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -617,16 +647,6 @@ function populateAnalysisTab() {
     document.getElementById('modal-total-tx').textContent = pendingTransactions.length;
     document.getElementById('modal-total-credit').textContent = formatCurrency(totalCredit);
     document.getElementById('modal-total-debit').textContent = formatCurrency(totalDebit);
-
-    // Bind Reactive Category Selectors for the Pending statement preview
-    document.querySelectorAll('#analysis-table-body .category-select').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-            const idx = parseInt(e.target.getAttribute('data-index'));
-            pendingTransactions[idx].category = e.target.value;
-            // No need to re-render table here, but let's re-run Loan Analysis just in case!
-            runLoanAnalysis(pendingTransactions);
-        });
-    });
 }
 
 // -----------------------------------------
@@ -645,25 +665,62 @@ tabBtns.forEach(btn => {
     });
 });
 
-document.getElementById('discard-import').addEventListener('click', () => {
-    pendingTransactions = [];
-    document.getElementById('tab-btn-analysis').classList.add('hidden');
-    document.querySelector('[data-target="tab-dashboard"]').click();
+
+
+document.getElementById('download-report')?.addEventListener('click', () => {
+    let incomeCalc = formatCurrency(analyzeIncomeStability(pendingTransactions).income);
+    let emiCalc = formatCurrency(analyzeEMIProfile(pendingTransactions));
+    let totalExp = formatCurrency(pendingTransactions.filter(t => t.type === 'debit').reduce((acc, t) => acc + t.amount, 0));
+    const loanStatus = document.getElementById('loan-decision').textContent;
+    const riskBadge = document.getElementById('risk-badge').textContent;
+    const emiRatioStr = document.getElementById('emi-ratio-text').textContent;
+    const cibilStr = document.getElementById('cibil-score').textContent;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("FINANCIAL REPORT", 20, 25);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Total Verified Income : ${incomeCalc}`, 20, 45);
+    doc.text(`Total Expenses        : ${totalExp}`, 20, 55);
+    doc.text(`Total EMI Burden      : ${emiCalc} (${emiRatioStr} of Income)`, 20, 65);
+    doc.text(`CIBIL Score           : ${cibilStr}`, 20, 75);
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RISK ASSESSMENT", 20, 95);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Risk Level    : ${riskBadge}`, 20, 105);
+    doc.text(`Loan Decision : ${loanStatus}`, 20, 115);
+    
+    doc.save('Financial_Report.pdf');
 });
 
-document.getElementById('confirm-import').addEventListener('click', () => {
-    let incomeCalc = calculateTrueMonthlyIncome(pendingTransactions);
+function autoSaveStatement() {
+    let incomeCalc = analyzeIncomeStability(pendingTransactions).income;
     
     pendingTransactions.reverse().forEach((tx, idx) => {
-        transactions.unshift({
-            id: transactions.length + Date.now() + idx, 
-            date: tx.date,
-            description: tx.description,
-            amount: tx.amount,
-            type: tx.type,
-            category: tx.category
-        });
+        // Prevent duplicate appending over multiple triggers
+        const txExists = transactions.find(t => t.date === tx.date && t.description === tx.description && t.amount === tx.amount);
+        if (!txExists) {
+            transactions.unshift({
+                id: transactions.length + Date.now() + idx, 
+                date: tx.date,
+                description: tx.description,
+                amount: tx.amount,
+                type: tx.type,
+                category: tx.category
+            });
+        }
     });
+    
+    // Sort transactions properly by date if needed but unshift puts recent on top
     
     const history = JSON.parse(localStorage.getItem('finance-history') || '[]');
     const emiRatioStr = document.getElementById('emi-ratio-text').textContent;
@@ -684,23 +741,28 @@ document.getElementById('confirm-import').addEventListener('click', () => {
         txCount: pendingTransactions.length
     };
     
-    history.unshift(newRecord);
-    localStorage.setItem('finance-history', JSON.stringify(history));
+    // Prevent exactly identical history pushes inside same ms block/same file
+    if (history.length === 0 || history[0].fileName !== newRecord.fileName || history[0].txCount !== newRecord.txCount) {
+        history.unshift(newRecord);
+        localStorage.setItem('finance-history', JSON.stringify(history));
+    }
     
     initDashboard();
     renderHistory();
-    
-    pendingTransactions = [];
-    currentFileName = "";
-    document.getElementById('tab-btn-analysis').classList.add('hidden');
-    document.querySelector('[data-target="tab-history"]').click(); // Auto redirect to history to prove it saved
-});
+}
 
 // -----------------------------------------
 // DUMMY CIBIL SCORE SYSTEM
 // -----------------------------------------
 
-function generateDummyCibil() {
+async function fetchLiveCibilScore(e) {
+    e.preventDefault();
+    
+    // UI Elements
+    const panInput = document.getElementById('cibil-pan').value;
+    const mobileInput = document.getElementById('cibil-mobile').value;
+    const btnText = document.getElementById('cibil-btn-text');
+    const spinner = document.getElementById('cibil-spinner');
     const cta = document.getElementById('cibil-cta');
     const display = document.getElementById('cibil-display');
     const scoreEl = document.getElementById('cibil-score');
@@ -708,31 +770,63 @@ function generateDummyCibil() {
     const dateEl = document.getElementById('cibil-date');
     const ring = document.getElementById('score-ring');
 
-    cta.classList.add('hidden');
-    display.classList.remove('hidden');
-    
-    const minScore = 650;
-    const maxScore = 850;
-    const finalScore = Math.floor(Math.random() * (maxScore - minScore + 1)) + minScore;
-    
-    let current = 300;
-    const duration = 1500; 
-    const steps = 60;
-    const increment = (finalScore - current) / steps;
-    const stepTime = duration / steps;
-    
-    const interval = setInterval(() => {
-        current += increment;
-        if (current >= finalScore) {
-            current = finalScore;
-            clearInterval(interval);
-            applyScoreStyles(finalScore, scoreEl, remarkEl, ring);
-            dateEl.textContent = `Generated: ${new Date().toLocaleDateString('en-GB')}`;
+    if (!panInput || !mobileInput) return;
+
+    // Loading State
+    btnText.textContent = "Authenticating...";
+    spinner.classList.remove('hidden');
+    const fetchBtn = document.getElementById('fetch-cibil-btn');
+    fetchBtn.disabled = true;
+    fetchBtn.style.opacity = '0.7';
+
+    try {
+        // PRODUCTION MOCK: In a real app, this hits your Node.js endpoint:
+        // const response = await fetch('/api/bureau/experian/fetch-score', { method: 'POST', body: JSON.stringify({ pan: panInput, mobile: mobileInput }) });
+        
+        // Simulating 2 seconds of Network Delay & NSDL Verification
+        await new Promise(r => setTimeout(r, 2000));
+        
+        // Mock payload representing what Experian/CIBIL securely returns
+        const mockApiResponse = {
+            status: "SUCCESS",
+            data: {
+                pan_matched: true,
+                score: Math.floor(Math.random() * (850 - 650 + 1)) + 650,
+                report_date: new Date().toLocaleDateString('en-GB')
+            }
+        };
+
+        if (mockApiResponse.status === "SUCCESS") {
+            cta.classList.add('hidden');
+            display.classList.remove('hidden');
+            
+            const finalScore = mockApiResponse.data.score;
+            let current = 300;
+            const steps = 40;
+            const increment = (finalScore - current) / steps;
+            
+            const interval = setInterval(() => {
+                current += increment;
+                if (current >= finalScore) {
+                    current = finalScore;
+                    clearInterval(interval);
+                    applyScoreStyles(finalScore, scoreEl, remarkEl, ring);
+                    dateEl.textContent = `Generated: ${mockApiResponse.data.report_date}`;
+                }
+                scoreEl.textContent = Math.floor(current);
+                const ratio = ((current - 300) / 600) * 100;
+                ring.style.background = `conic-gradient(var(--color-accent) ${ratio}%, transparent 0)`;
+            }, 30);
         }
-        scoreEl.textContent = Math.floor(current);
-        const ratio = ((current - 300) / 600) * 100;
-        ring.style.background = `conic-gradient(var(--color-accent) ${ratio}%, transparent 0)`;
-    }, stepTime);
+
+    } catch (err) {
+        alert("Credit API Error: Unable to verify PAN details. Please try again later.");
+    } finally {
+        btnText.textContent = "Authenticate & Fetch";
+        spinner.classList.add('hidden');
+        fetchBtn.disabled = false;
+        fetchBtn.style.opacity = '1';
+    }
 }
 
 function applyScoreStyles(score, scoreEl, remarkEl, ring) {
@@ -758,30 +852,65 @@ function getMonthKey(dateStr) {
     return "unknown";
 }
 
-function calculateTrueMonthlyIncome(txArray) {
-    if (!txArray || txArray.length === 0) return 0;
-    let validIncomeTotal = 0;
+function analyzeIncomeStability(txArray) {
+    if (!txArray || txArray.length === 0) return { income: 0, status: 'No Income', stable: false };
+    
+    let credits = [];
     let uniqueMonths = new Set();
-
+    
     txArray.forEach(tx => {
         const dLower = tx.description.toLowerCase();
-        uniqueMonths.add(getMonthKey(tx.date));
-
-        if (tx.type === 'credit') {
-            const isRefund = dLower.includes('refund') || dLower.includes('reversal') || dLower.includes('cashback') || dLower.includes('return') || dLower.includes('fail');
-            const isSelfTransfer = dLower.includes('self') || dLower.includes('own account') || dLower.includes('fd closure');
-            
-            if (!isRefund && !isSelfTransfer) {
-                validIncomeTotal += tx.amount;
-            }
+        const isRefund = dLower.includes('refund') || dLower.includes('reversal') || dLower.includes('cashback') || dLower.includes('return') || dLower.includes('fail');
+        const isSelfTransfer = dLower.includes('self') || dLower.includes('own account') || dLower.includes('fd closure');
+        
+        if (tx.type === 'credit' && !isRefund && !isSelfTransfer) {
+            credits.push(tx);
+            uniqueMonths.add(getMonthKey(tx.date));
         }
     });
 
     let monthCount = uniqueMonths.size > 0 ? uniqueMonths.size : 1;
-    return validIncomeTotal / monthCount;
+    let validIncomeTotal = credits.reduce((acc, t) => acc + t.amount, 0);
+    let avgIncome = validIncomeTotal / monthCount;
+
+    if (credits.length === 0) return { income: 0, status: 'No Income', stable: false };
+
+    let isStable = false;
+    
+    // 1-Month Statement Fallback: Check if description explicitly tags SALARY
+    if (uniqueMonths.size <= 1) {
+        let hasExplicitSalary = credits.some(t => t.description.toLowerCase().includes('salary'));
+        isStable = hasExplicitSalary;
+    } else {
+        // Multi-Month Check: Look for identical recurring credit amounts
+        let amounts = credits.map(t => t.amount);
+        let amountCounts = {};
+        amounts.forEach(a => amountCounts[a] = (amountCounts[a] || 0) + 1);
+        let maxRecurring = Math.max(...Object.values(amountCounts));
+        
+        if (maxRecurring > 1) {
+            isStable = true;
+        } else {
+            // Check for variance (fluctuation < 15%)
+            let monthlyMap = {};
+            credits.forEach(t => {
+                let mk = getMonthKey(t.date);
+                monthlyMap[mk] = (monthlyMap[mk] || 0) + t.amount;
+            });
+            let variance = Object.values(monthlyMap).reduce((acc, val) => acc + Math.pow(val - avgIncome, 2), 0) / monthCount;
+            let stdDev = Math.sqrt(variance);
+            if(avgIncome > 0 && (stdDev / avgIncome) < 0.15) isStable = true;
+        }
+    }
+
+    return { 
+        income: avgIncome, 
+        status: isStable ? "Stable" : "Irregular", 
+        stable: isStable 
+    };
 }
 
-function calculateTrueMonthlyEMI(txArray) {
+function analyzeEMIProfile(txArray) {
     if (!txArray || txArray.length === 0) return 0;
     let validEmiTotal = 0;
     let uniqueMonths = new Set();
@@ -791,7 +920,8 @@ function calculateTrueMonthlyEMI(txArray) {
         uniqueMonths.add(getMonthKey(tx.date));
         
         if (tx.type === 'debit') {
-            if (dLower.includes('emi') || dLower.includes('loan') || dLower.includes('bajaj') || dLower.includes('muthoot') || dLower.includes('hdb') || tx.category === 'Rent') {
+            // Enhanced hunting for EMI/LOAN/FINANCE
+            if (dLower.includes('emi') || dLower.includes('loan') || dLower.includes('finance') || dLower.includes('bajaj') || dLower.includes('muthoot') || dLower.includes('hdb') || tx.category === 'Rent') {
                 validEmiTotal += tx.amount;
             }
         }
@@ -813,8 +943,9 @@ function runLoanAnalysis(txArray) {
         }
     });
 
-    let income = calculateTrueMonthlyIncome(txArray);
-    let emi = calculateTrueMonthlyEMI(txArray);
+    const incomeProfile = analyzeIncomeStability(txArray);
+    let income = incomeProfile.income;
+    let emi = analyzeEMIProfile(txArray);
 
     const emiRatio = income > 0 ? (emi / income) * 100 : 0;
     const currentCibilText = document.getElementById('cibil-score').textContent;
@@ -824,12 +955,14 @@ function runLoanAnalysis(txArray) {
     const condEmi = emiRatio < 40;
     const condBounce = bounce === 0;
     const condCibil = currentCibil >= 720;
+    const condStability = incomeProfile.stable;
 
     let weakFactors = 0;
     if (!condIncome) weakFactors++;
     if (!condEmi) weakFactors++;
     if (!condBounce) weakFactors++;
     if (!condCibil) weakFactors++;
+    if (!condStability) weakFactors++;
 
     let decision = "REJECTED"; let decisionClass = "score-poor";
     let loanAmt = "₹0"; let risk = "High Risk"; let riskColor = "var(--color-debit)";
@@ -837,7 +970,7 @@ function runLoanAnalysis(txArray) {
     if (weakFactors === 0) {
         decision = "APPROVED"; decisionClass = "score-excellent";
         loanAmt = "₹3,00,000"; risk = "Low Risk"; riskColor = "var(--color-credit)";
-    } else if (weakFactors === 1) {
+    } else if (weakFactors === 1 || weakFactors === 2) { 
         decision = "MANUAL REVIEW"; decisionClass = "score-average";
         loanAmt = "₹1,00,000"; risk = "Medium Risk"; riskColor = "var(--color-accent)";
     }
@@ -850,11 +983,35 @@ function runLoanAnalysis(txArray) {
     document.getElementById('fact-emi').textContent = condEmi ? "✅" : "❌";
     document.getElementById('fact-bounce').textContent = condBounce ? "✅" : "❌";
     document.getElementById('fact-cibil').textContent = condCibil ? "✅" : "❌";
+    
+    let factStabilityEl = document.getElementById('fact-stability');
+    if(factStabilityEl) factStabilityEl.textContent = condStability ? "✅" : "❌";
 
     const riskBadge = document.getElementById('risk-badge');
     riskBadge.textContent = risk;
     riskBadge.style.color = riskColor;
     riskBadge.style.border = `1px solid ${riskColor}`;
+
+    // Update New UI Elements for EMI and Salary
+    let emiTotalRaw = document.getElementById('emi-total-raw');
+    if (emiTotalRaw) emiTotalRaw.textContent = formatCurrency(emi);
+
+    let incomeMonthlyRaw = document.getElementById('income-monthly-raw');
+    if (incomeMonthlyRaw) incomeMonthlyRaw.textContent = formatCurrency(income);
+
+    let stabilityBadge = document.getElementById('income-stability-badge');
+    if (stabilityBadge) {
+        stabilityBadge.textContent = incomeProfile.status;
+        if (incomeProfile.stable) {
+            stabilityBadge.style.background = 'rgba(16,185,129,0.15)';
+            stabilityBadge.style.color = 'var(--color-credit)';
+            stabilityBadge.style.border = '1px solid var(--color-credit)';
+        } else {
+            stabilityBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+            stabilityBadge.style.color = '#f59e0b';
+            stabilityBadge.style.border = '1px solid #f59e0b';
+        }
+    }
 
     document.getElementById('emi-ratio-text').textContent = Math.round(emiRatio) + "%";
     
@@ -976,8 +1133,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initDashboard();
     renderHistory();
     
-    const cibilBtn = document.getElementById('check-cibil-btn');
-    if (cibilBtn) cibilBtn.addEventListener('click', generateDummyCibil);
+    const cibilForm = document.getElementById('cibil-fetch-form');
+    if (cibilForm) cibilForm.addEventListener('submit', fetchLiveCibilScore);
     
     const themeBtn = document.getElementById('theme-toggle');
     const sunIcon = document.querySelector('.sun-icon');
@@ -1189,4 +1346,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Trigger Initial Live Fetch
     fetchLiveRates();
+
+    // Back to Top Logic
+    const backToTopBtn = document.getElementById('back-to-top');
+    if (backToTopBtn) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.add('visible');
+            } else {
+                backToTopBtn.classList.remove('visible');
+            }
+        });
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 });

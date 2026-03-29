@@ -22,7 +22,7 @@
             <div class="header-actions">
                 <label for="statement-upload" class="upload-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    <span>Upload Statement</span>
+                    <span>Analyze Bank Statement</span>
                 </label>
                 <input type="file" id="statement-upload" accept=".pdf,application/pdf,.csv,.xls,.xlsx" hidden multiple>
                 
@@ -117,8 +117,8 @@
                             <div class="health-dial-progress" id="health-dial-progress"></div>
                             <div class="health-dial-inner">
                                 <h2 id="health-score">0</h2>
-                                <span class="health-max">out of 1000</span>
-                                <div class="health-grade" id="health-grade">--</div>
+                                <span class="health-max">out of 100</span>
+                                <div class="health-grade" id="health-grade">(Healthy)</div>
                             </div>
                         </div>
                         <p id="health-summary" class="health-summary">Analyzing your financial baseline...</p>
@@ -197,8 +197,23 @@
                         <div class="cibil-card" id="cibil-container">
                             <div class="cibil-cta" id="cibil-cta">
                                 <span class="cibil-icon">💳</span>
-                                <p>Check your credit health</p>
-                                <button class="btn-primary" id="check-cibil-btn">Generate Dummy Report</button>
+                                <p style="margin-bottom: 0.5rem;">Check your credit health</p>
+                                <div id="cibil-form-container" style="width: 100%; text-align: left;">
+                                    <form id="cibil-fetch-form" style="display: flex; flex-direction: column; gap: 0.8rem;">
+                                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">PAN Number</label>
+                                            <input type="text" id="cibil-pan" class="form-control" placeholder="ABCDE1234F" required maxlength="10" style="text-transform: uppercase;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Mobile Number</label>
+                                            <input type="tel" id="cibil-mobile" class="form-control" placeholder="9876543210" required maxlength="10" pattern="[0-9]{10}">
+                                        </div>
+                                        <button type="submit" class="btn-primary" id="fetch-cibil-btn" style="width: 100%; position: relative; margin-top: 0.5rem;">
+                                            <span id="cibil-btn-text">Authenticate & Fetch</span>
+                                            <span id="cibil-spinner" class="hidden" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; animation: spin 1s linear infinite;">⏳</span>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                             <div class="cibil-score-display hidden" id="cibil-display">
                                 <div class="score-ring" id="score-ring">
@@ -274,19 +289,40 @@
                                 </div>
                                 <div class="loan-metrics-grid" style="grid-template-columns: 1fr; gap: 1rem;">
                                     
-                                    <div style="display: flex; justify-content: space-around; align-items: center; background: var(--item-bg); padding: 1rem; border-radius: 14px; border: 1px solid var(--card-border);">
+                                    <!-- Salary Detection Box -->
+                                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); padding: 1rem 1.5rem; border-radius: 14px; border: 1px solid var(--card-border);">
                                         <div class="loan-metric-box">
-                                            <h4>EMI vs Income Ratio</h4>
+                                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.2rem;">Verified Income</p>
+                                            <h3 id="income-monthly-raw" style="color: var(--color-credit);">₹0</h3>
                                         </div>
-                                        <div class="emi-pie-wrapper" style="width: 100px; height: 100px;">
-                                            <div class="emi-pie-chart" id="emi-pie"></div>
-                                            <div class="emi-pie-inner" style="inset: 10px;">
-                                                <span id="emi-ratio-text" style="font-size: 1.1rem;">0%</span>
+                                        <div style="text-align: right;">
+                                            <p style="font-size: 0.8rem; margin-bottom: 0.4rem;">Status</p>
+                                            <span id="income-stability-badge" style="background: rgba(16,185,129,0.15); color: var(--color-credit); padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">Stable</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- EMI Detection Box -->
+                                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); padding: 1rem 1.5rem; border-radius: 14px; border: 1px solid var(--card-border);">
+                                        <div class="loan-metric-box">
+                                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.2rem;">Total EMI</p>
+                                            <h3 id="emi-total-raw" style="color: var(--color-debit);">₹0</h3>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <div class="emi-pie-wrapper" style="width: 50px; height: 50px;">
+                                                <div class="emi-pie-chart" id="emi-pie"></div>
+                                                <div class="emi-pie-inner" style="inset: 6px;">
+                                                    <span id="emi-ratio-text" style="font-size: 0.8rem;">0%</span>
+                                                </div>
                                             </div>
+                                            <p style="font-size: 0.8rem; color: var(--text-muted);">of Income</p>
                                         </div>
                                     </div>
 
                                     <div class="loan-factors">
+                                        <div class="factor-row">
+                                            <span>Stable Income Stream</span>
+                                            <span id="fact-stability">✅</span>
+                                        </div>
                                         <div class="factor-row">
                                             <span>Income > ₹25k</span>
                                             <span id="fact-income">✅</span>
@@ -312,9 +348,12 @@
                         </div>
                     </section>
 
-                    <div class="import-actions">
-                        <button id="discard-import" class="btn-secondary">Discard Statement</button>
-                        <button id="confirm-import" class="btn-primary">Import Data to Dashboard</button>
+                    <div class="statement-actions" style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--card-border);">
+                        <button id="download-report" class="btn-primary" style="box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);"><span style="margin-right: 0.5rem;">📥</span>Download Financial Report</button>
+                        <span style="color: var(--color-credit); font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            Automatically Saved to History
+                        </span>
                     </div>
                 </div>
             </div>
@@ -431,9 +470,14 @@
             </div>
         </div>
     </div>
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="back-to-top-btn" aria-label="Scroll back to top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
