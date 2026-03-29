@@ -24,7 +24,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     <span>Upload Statement</span>
                 </label>
-                <input type="file" id="statement-upload" accept=".pdf,application/pdf" hidden multiple>
+                <input type="file" id="statement-upload" accept=".pdf,application/pdf,.csv,.xls,.xlsx" hidden multiple>
                 
                 <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode">
                     <svg class="sun-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -62,6 +62,17 @@
 
         <!-- TAB 1: DASHBOARD OVERVIEW -->
         <div id="tab-dashboard" class="tab-pane active">
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions-bar">
+                <button class="btn-quick-expense" id="btn-add-expense">
+                    <span class="q-icon">▼</span> Add Expense
+                </button>
+                <button class="btn-quick-income" id="btn-add-income">
+                    <span class="q-icon">▲</span> Add Income
+                </button>
+            </div>
+
             <!-- Top Summary Cards -->
             <section class="summary-cards">
                 <div class="card income-card">
@@ -93,11 +104,36 @@
                 </div>
             </section>
 
-            <!-- Monthly Insight -->
-            <section class="insight-section" style="margin-top: 2rem;">
-                <div class="insight-box">
-                    <span class="insight-icon">✨</span>
-                    <p id="monthly-insight">Loading insight...</p>
+            <!-- AI Insights & KnowYourFinance Hub -->
+            <section class="ai-hub-section">
+                <div class="ai-hub-grid">
+                    <!-- Left: Financial Health Score -->
+                    <div class="health-score-container card">
+                        <div class="health-header">
+                            <h3><span class="ai-icon">✨</span> KnowYourFinance Score</h3>
+                        </div>
+                        <div class="health-dial-wrapper">
+                            <div class="health-dial-bg"></div>
+                            <div class="health-dial-progress" id="health-dial-progress"></div>
+                            <div class="health-dial-inner">
+                                <h2 id="health-score">0</h2>
+                                <span class="health-max">out of 1000</span>
+                                <div class="health-grade" id="health-grade">--</div>
+                            </div>
+                        </div>
+                        <p id="health-summary" class="health-summary">Analyzing your financial baseline...</p>
+                    </div>
+
+                    <!-- Right: Smart Alerts -->
+                    <div class="smart-alerts-container card">
+                        <div class="alerts-header">
+                            <h3>🧠 Smart AI Alerts</h3>
+                            <span class="badge" id="alerts-count" style="background: var(--color-accent); color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem;">0</span>
+                        </div>
+                        <div class="alerts-list" id="alerts-list">
+                            <!-- JS Injects Alert Items -->
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -362,7 +398,42 @@
         </div>
     </div>
 
+    <!-- Manual Input Modal -->
+    <div class="modal-overlay hidden" id="manual-input-modal">
+        <div class="account-modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 id="manual-modal-title">Add Transaction</h2>
+                <button class="close-modal" id="close-manual-modal">&times;</button>
+            </div>
+            <div class="account-details-body">
+                <form id="manual-transaction-form">
+                    <input type="hidden" id="manual-tx-type" value="debit">
+                    <div class="form-group">
+                        <label id="manual-amount-label">Amount (₹)</label>
+                        <input type="number" id="manual-amount" class="form-control" placeholder="0" required min="1" step="any">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="manual-desc" class="form-control" placeholder="e.g., Groceries" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="manual-category" class="form-control" required>
+                            <option value="Food">Food</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Income">Income</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;" id="manual-submit-btn">Add Transaction</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

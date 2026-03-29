@@ -1,5 +1,4 @@
-// Data Models
-const transactions = [
+let defaultTransactions = [
     { id: 1, date: '19 Mar 2026', description: 'Monthly Salary', amount: 85000, type: 'credit', category: 'Income' },
     { id: 2, date: '18 Mar 2026', description: 'Apartment Rent', amount: 22000, type: 'debit', category: 'Rent' },
     { id: 3, date: '15 Mar 2026', description: 'Supermarket Groceries', amount: 5600, type: 'debit', category: 'Food' },
@@ -12,6 +11,16 @@ const transactions = [
     { id: 7, date: '05 Mar 2026', description: 'Zara Clothing', amount: 4500, type: 'debit', category: 'Shopping' }
 ];
 
+let transactions = [];
+try {
+    const saved = localStorage.getItem('finance-app-transactions');
+    if (saved) transactions = JSON.parse(saved);
+} catch(e) {}
+
+if (transactions.length === 0) {
+    transactions = [...defaultTransactions];
+}
+
 let pendingTransactions = [];
 let currentFileName = "";
 
@@ -21,6 +30,106 @@ function formatCurrency(amount) {
         currency: 'INR',
         maximumFractionDigits: 0
     }).format(amount);
+}
+
+// -----------------------------------------
+// AI INSIGHTS & FINANCIAL HEALTH LOGIC
+// -----------------------------------------
+
+function calculateFinancialHealth(balance, totalIncome, categoryTotals) {
+    let score = 500; // Base score average
+    if (totalIncome > 0) {
+        let savingsRatio = balance / totalIncome;
+        if (savingsRatio > 0) {
+            score += Math.min(savingsRatio * 500, 300);
+        } else {
+            score -= Math.min(Math.abs(savingsRatio) * 300, 200);
+        }
+        
+        let rentRatio = (categoryTotals['Rent'] || 0) / totalIncome;
+        if (rentRatio < 0.3) score += 100;
+        else if (rentRatio > 0.5) score -= 100;
+        
+        score += 100; // Baseline bump for active income
+    }
+    
+    score = Math.max(300, Math.min(Math.round(score), 1000));
+    
+    const dial = document.getElementById('health-dial-progress');
+    const scoreText = document.getElementById('health-score');
+    const grade = document.getElementById('health-grade');
+    const summary = document.getElementById('health-summary');
+    
+    if (dial) {
+        let percentage = ((score - 300) / 700) * 100;
+        setTimeout(() => {
+            dial.style.background = `conic-gradient(var(--color-accent) ${percentage}%, transparent 0)`;
+        }, 100);
+    }
+    if (scoreText) scoreText.textContent = score;
+    
+    if (grade && summary) {
+        if (score >= 800) { 
+            grade.textContent = 'Excellent'; 
+            grade.style.color = 'var(--color-credit)'; 
+            summary.textContent = "Your financial health is in top shape! Exceptional savings and low debt burden."; 
+        } else if (score >= 600) { 
+            grade.textContent = 'Good'; 
+            grade.style.color = 'var(--color-accent)'; 
+            summary.textContent = "You are doing well, but there is room to optimize your variable spending."; 
+        } else { 
+            grade.textContent = 'Needs Work'; 
+            grade.style.color = 'var(--color-debit)'; 
+            summary.textContent = "High spending detected. Consider tracking your expenses more closely."; 
+        }
+    }
+}
+
+function generateAiInsights(balance, totalIncome, categoryTotals) {
+    const alertsList = document.getElementById('alerts-list');
+    const alertsCount = document.getElementById('alerts-count');
+    if (!alertsList) return;
+    
+    alertsList.innerHTML = '';
+    let alerts = [];
+    
+    // Core Savings Alert
+    if (balance > 0) {
+        alerts.push({ type: 'positive', icon: '🎯', title: 'Target Achieved', desc: `You successfully saved ${formatCurrency(balance)} this month. Keep it up!` });
+    } else {
+        alerts.push({ type: 'negative', icon: '⚠️', title: 'Overspending Detected', desc: `You overspent by ${formatCurrency(Math.abs(balance))} this month relative to income.` });
+    }
+    
+    // Contextual Spending Alerts
+    if (totalIncome > 0 && categoryTotals['Food'] > totalIncome * 0.2) {
+        alerts.push({ type: 'warning', icon: '🍔', title: 'High Food Expenses', desc: `Food takes up over 20% of your income. Consider cooking at home to accelerate savings.` });
+    } else if (categoryTotals['Food'] > 0) {
+        alerts.push({ type: 'info', icon: '🍲', title: 'Dining Insights', desc: `Your food and dining expenses seem well within limits.` });
+    }
+    
+    if (categoryTotals['Rent'] > 0) {
+        alerts.push({ type: 'info', icon: '📅', title: 'Upcoming Commitments', desc: `We noticed routine rent/EMI patterns. Ensure enough balance by the 1st week of next month.` });
+    }
+    
+    if (categoryTotals['Shopping'] > (categoryTotals['Food'] + 2000)) {
+        alerts.push({ type: 'warning', icon: '🛍️', title: 'Impulse Buying Alert', desc: `Your shopping expenses are quite high compared to essentials. Try the 48-hour rule before purchasing.` });
+    }
+
+    if (alertsCount) alertsCount.textContent = `${alerts.length} New`;
+    
+    alerts.forEach((alert, i) => {
+        const div = document.createElement('div');
+        div.className = `smart-alert-item alert-${alert.type}`;
+        div.style.animationDelay = `${i * 0.15}s`;
+        div.innerHTML = `
+            <div class="alert-icon">${alert.icon}</div>
+            <div class="alert-content">
+                <h4>${alert.title}</h4>
+                <p>${alert.desc}</p>
+            </div>
+        `;
+        alertsList.appendChild(div);
+    });
 }
 
 // -----------------------------------------
@@ -81,12 +190,8 @@ function initDashboard() {
     document.getElementById('total-expense').textContent = formatCurrency(totalExpense);
     document.getElementById('total-balance').textContent = formatCurrency(balance);
 
-    const insight = document.getElementById('monthly-insight');
-    if (balance > 0) {
-        insight.textContent = `You saved ${formatCurrency(balance)} this month 🎉`;
-    } else {
-        insight.textContent = `You overspent by ${formatCurrency(Math.abs(balance))} this month ⚠️`;
-    }
+    calculateFinancialHealth(balance, totalIncome, categoryTotals);
+    generateAiInsights(balance, totalIncome, categoryTotals);
 
     renderCategories(totalExpense, categoryTotals);
     renderSubscriptions();
@@ -215,6 +320,24 @@ document.getElementById('statement-upload').addEventListener('change', async fun
     if (!files || files.length === 0) return;
 
     currentFileName = Array.from(files).map(f => f.name).join(", ");
+    
+    // Check if it's a spreadsheet (CSV/Excel)
+    let firstFile = files[0];
+    if (firstFile.name.endsWith('.csv') || firstFile.name.endsWith('.xls') || firstFile.name.endsWith('.xlsx')) {
+        try {
+            const data = await firstFile.arrayBuffer();
+            const workbook = XLSX.read(data);
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonRows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
+            parseSpreadsheetData(jsonRows);
+        } catch (err) {
+            console.error("Spreadsheet Parse Error:", err);
+            alert("Error parsing Spreadsheet. Please check the file formatting.");
+        }
+        e.target.value = '';
+        return;
+    }
+
     let allCombinedLines = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -260,6 +383,75 @@ document.getElementById('statement-upload').addEventListener('change', async fun
     // Reset file input so you can re-upload identical files if necessary
     e.target.value = '';
 });
+
+function parseSpreadsheetData(rows) {
+    pendingTransactions = [];
+    
+    rows.forEach(row => {
+        let desc = "";
+        let amount = 0;
+        let isCredit = false;
+        let dateVal = new Date().toLocaleDateString('en-GB'); 
+
+        for (let key in row) {
+            let val = String(row[key]).trim();
+            if (!val) continue;
+            let kLower = key.toLowerCase();
+            
+            if (kLower.includes("date")) dateVal = val;
+            if (kLower.includes("desc") || kLower.includes("particular") || kLower.includes("narration") || kLower.includes("detail")) {
+               desc = val;
+            }
+
+            let parsed = parseFloat(val.replace(/[^\d.-]/g, ''));
+            if (kLower.includes("credit") || kLower.includes("deposit") || kLower.includes("cr.")) {
+                if (!isNaN(parsed) && parsed > 0) { amount = parsed; isCredit = true; }
+            } else if (kLower.includes("debit") || kLower.includes("withdrawal") || kLower.includes("dr.")) {
+                if (!isNaN(parsed) && parsed > 0) { amount = parsed; isCredit = false; }
+            } else if (kLower.includes("amount")) {
+                 if (!isNaN(parsed) && parsed !== 0) {
+                     amount = Math.abs(parsed);
+                     if (parsed > 0 || String(row["Type"]).toLowerCase().includes("cr") || String(row["CR/DR"]).toLowerCase().includes("cr")) {
+                         isCredit = true;
+                     } 
+                 }
+            }
+        }
+        
+        if (!desc) {
+            let strCols = Object.values(row).filter(v => typeof v === 'string' && isNaN(parseFloat(v)) && v.length > 3);
+            if (strCols.length > 0) desc = strCols[0];
+        }
+
+        if (desc === "") desc = "Spreadsheet Transaction";
+        if (desc.length > 35) desc = desc.substring(0, 35);
+        
+        if (amount > 0) {
+            let type = isCredit ? 'credit' : 'debit';
+            let category = 'Other';
+            let dLower = desc.toLowerCase();
+
+            if (dLower.includes('salary') || dLower.includes('refund') || dLower.includes('deposit') || dLower.includes('received') || type === 'credit') {
+                type = 'credit'; category = 'Income';
+            } else {
+                if (dLower.includes('swiggy') || dLower.includes('zomato') || dLower.includes('restaurant') || dLower.includes('food')) category = 'Food';
+                else if (dLower.includes('amazon') || dLower.includes('flipkart') || dLower.includes('myntra') || dLower.includes('zara')) category = 'Shopping';
+                else if (dLower.includes('rent') || dLower.includes('emi') || dLower.includes('loan') || dLower.includes('bajaj')) category = 'Rent';
+            }
+
+            pendingTransactions.push({ date: dateVal, description: desc, amount: amount, type: type, category: category });
+        }
+    });
+
+    if (pendingTransactions.length > 0) {
+        document.getElementById('tab-btn-analysis').classList.remove('hidden');
+        document.getElementById('tab-btn-analysis').click();
+        populateAnalysisTab();
+        runLoanAnalysis(pendingTransactions);
+    } else {
+        alert("Spreadsheet parsed successfully, but no valid transactions were detected.");
+    }
+}
 
 function parsePDFText(lines) {
     pendingTransactions = [];
@@ -453,11 +645,13 @@ document.getElementById('confirm-import').addEventListener('click', () => {
         });
     });
     
-    // Save to LocalStorage DB
     const history = JSON.parse(localStorage.getItem('finance-history') || '[]');
     const emiRatioStr = document.getElementById('emi-ratio-text').textContent;
     const loanStatus = document.getElementById('loan-decision').textContent;
     const riskBadge = document.getElementById('risk-badge').textContent;
+    
+    // Refresh localStorage for transactions sync
+    localStorage.setItem('finance-app-transactions', JSON.stringify(transactions));
     
     const newRecord = {
         id: Date.now(),
@@ -790,6 +984,71 @@ document.addEventListener('DOMContentLoaded', () => {
             moonIcon.classList.add('hidden');
         }
     });
+
+    // -- Manual Input Modal Logic --
+    const modalManual = document.getElementById('manual-input-modal');
+    const closeManual = document.getElementById('close-manual-modal');
+    const btnExpense = document.getElementById('btn-add-expense');
+    const btnIncome = document.getElementById('btn-add-income');
+    const formManual = document.getElementById('manual-transaction-form');
+    
+    if (btnExpense) {
+        btnExpense.addEventListener('click', () => {
+            document.getElementById('manual-modal-title').textContent = 'Add Expense';
+            document.getElementById('manual-amount-label').textContent = 'Amount (Expense)';
+            document.getElementById('manual-tx-type').value = 'debit';
+            document.getElementById('manual-category').value = 'Food';
+            modalManual.classList.remove('hidden');
+        });
+    }
+
+    if (btnIncome) {
+        btnIncome.addEventListener('click', () => {
+            document.getElementById('manual-modal-title').textContent = 'Add Income';
+            document.getElementById('manual-amount-label').textContent = 'Amount (Income)';
+            document.getElementById('manual-tx-type').value = 'credit';
+            document.getElementById('manual-category').value = 'Income';
+            modalManual.classList.remove('hidden');
+        });
+    }
+    
+    if (closeManual) {
+        closeManual.addEventListener('click', () => modalManual.classList.add('hidden'));
+        modalManual.addEventListener('click', (e) => {
+            if (e.target === modalManual) modalManual.classList.add('hidden');
+        });
+    }
+    
+    if (formManual) {
+        formManual.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const type = document.getElementById('manual-tx-type').value;
+            const amount = parseFloat(document.getElementById('manual-amount').value);
+            const desc = document.getElementById('manual-desc').value;
+            const cat = document.getElementById('manual-category').value;
+            
+            const today = new Date();
+            const dateStr = today.getDate().toString().padStart(2, '0') + ' ' + 
+                            today.toLocaleString('en-GB', { month: 'short' }) + ' ' + 
+                            today.getFullYear();
+            
+            const newTx = {
+                id: Date.now(),
+                date: dateStr,
+                description: desc,
+                amount: amount,
+                type: type,
+                category: cat
+            };
+            
+            transactions.unshift(newTx);
+            localStorage.setItem('finance-app-transactions', JSON.stringify(transactions));
+            initDashboard();
+            
+            formManual.reset();
+            modalManual.classList.add('hidden');
+        });
+    }
 
     // Profile Dropdown Logic
     const profileBtn = document.getElementById('user-profile-btn');
